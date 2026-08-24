@@ -271,10 +271,10 @@ export default function AttackMode() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span className={`badge-status ${isCrit ? 'badge-blocked' : 'badge-warning'}`} style={{ fontSize: 10 }}>
-                        {f.severity}
+                        {isCrit ? 'ATTACK DETECTED / BLOCKED' : 'ADVISORY VULNERABILITY'}
                       </span>
-                      <span style={{ fontSize: 10, color: 'var(--fg-text-3)', fontFamily: 'monospace' }}>
-                        {f.attack_type}
+                      <span style={{ fontSize: 10, color: '#FB7185', fontFamily: 'monospace', fontWeight: 700 }}>
+                        ATTACK: {f.attack_type}
                       </span>
                     </div>
 
@@ -283,17 +283,18 @@ export default function AttackMode() {
                     </div>
 
                     <div style={{ fontSize: 11, color: 'var(--fg-text-2)', lineHeight: 1.35, marginBottom: 8 }}>
-                      {f.description}
+                      <strong>Impact:</strong> {f.description}
                     </div>
 
-                    {/* Exploit Scenario */}
+                    {/* Exploit Scenario & Target */}
                     <div style={{ padding: '6px 8px', background: 'rgba(244, 63, 94, 0.06)', borderRadius: 6, fontSize: 10.5, color: '#FB7185', marginBottom: 6 }}>
-                      <strong>Exploit:</strong> {f.exploit_scenario}
+                      <div><strong>Target Component:</strong> {f.affected_nodes.join(', ') || 'Workflow Edge'}</div>
+                      <div style={{ marginTop: 2 }}><strong>Mutation / Exploit:</strong> {f.exploit_scenario}</div>
                     </div>
 
-                    {/* Mitigation */}
+                    {/* Remediation */}
                     <div style={{ padding: '6px 8px', background: 'rgba(16, 185, 129, 0.06)', borderRadius: 6, fontSize: 10.5, color: '#34D399', marginBottom: 8 }}>
-                      <strong>Fix:</strong> {f.mitigation}
+                      <strong>Remediation:</strong> {f.mitigation}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

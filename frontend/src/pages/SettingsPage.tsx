@@ -34,7 +34,7 @@ export default function SettingsPage() {
                 fontFamily: 'Inter', fontSize: 13, fontWeight: 600,
               }}
             >
-              🔧 Mock Parser (No API Key)
+              ⚡ Deterministic Policy Parser (Zero-Config)
             </button>
             <button
               onClick={() => setUseMock(false)}
@@ -46,7 +46,7 @@ export default function SettingsPage() {
                 fontFamily: 'Inter', fontSize: 13, fontWeight: 600,
               }}
             >
-              🤖 Gemini LLM (API Key)
+              🤖 Google Gemini 2.0 LLM
             </button>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function SettingsPage() {
             style={{ height: 38, fontFamily: 'monospace' }}
           />
           <div style={{ fontSize: 11, color: 'var(--fg-text-muted)', marginTop: 4 }}>
-            Key is stored in localStorage only. Leave blank to use the deterministic mock parser.
+            Key is stored in localStorage only. Leave blank to use the deterministic offline policy parser.
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function SettingsPage() {
       <div className="fg-panel" style={{ padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-text-primary)', marginBottom: 14 }}>Architecture</div>
         {[
-          { label: 'Parser', value: useMock ? 'Deterministic Mock (heuristic)' : 'Google Gemini LLM', icon: '🤖' },
+          { label: 'Parser', value: useMock ? 'Deterministic Rule Engine (Offline)' : 'Google Gemini 2.0 LLM', icon: '🤖' },
           { label: 'IR Schema', value: 'Pydantic v2 (Python)', icon: '🧩' },
           { label: 'Verification', value: 'Deterministic NetworkX algorithms', icon: '⚡' },
           { label: 'Database', value: 'SQLite (SQLAlchemy async)', icon: '🗄️' },

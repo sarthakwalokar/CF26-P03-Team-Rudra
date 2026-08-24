@@ -114,7 +114,7 @@ export default function StressTesting() {
           {/* Main score metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
             {[
-              { label: 'Robustness', value: `${r.robustness_score.toFixed(1)}%`, color: getScoreColor(r.robustness_score) },
+              { label: 'Stress-Test Robustness', value: `${r.robustness_score.toFixed(1)}%`, color: getScoreColor(r.robustness_score) },
               { label: 'Total Scenarios', value: r.total.toLocaleString(), color: 'var(--fg-text-0)' },
               { label: 'Passed', value: r.passed.toLocaleString(), color: '#34D399' },
               { label: 'Failed', value: r.failed.toLocaleString(), color: '#FB7185' },

@@ -106,8 +106,8 @@ export default function CreateWorkflow() {
             <span style={{ fontSize: 11, color: 'var(--fg-text-muted)' }}>
               {policy.length} characters
             </span>
-            <span style={{ fontSize: 11, color: useMock ? '#F59E0B' : '#10B981' }}>
-              {useMock || !apiKey ? '🔧 Mock Parser Active' : '🤖 Gemini LLM Active'}
+            <span style={{ fontSize: 11, color: useMock || !apiKey ? '#F59E0B' : '#10B981' }}>
+              {useMock || !apiKey ? '⚡ Offline Policy Parser (Zero-Config)' : '🤖 Google Gemini 2.0 Parser'}
             </span>
           </div>
         </div>
