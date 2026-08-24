@@ -76,7 +76,7 @@ class WorkflowNode(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     name: str
     type: NodeType
-    action: str
+    action: str = ""
     actor: str = ""
     required_permissions: List[str] = Field(default_factory=list)
     inputs: List[str] = Field(default_factory=list)
