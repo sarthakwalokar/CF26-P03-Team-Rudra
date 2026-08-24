@@ -284,33 +284,38 @@ export default function VerificationCenter() {
                     <div
                       key={issue.id}
                       style={{
-                        padding: '14px 16px',
+                        padding: '16px 18px',
                         background: 'rgba(244, 63, 94, 0.07)',
                         border: '1px solid rgba(244, 63, 94, 0.35)',
                         borderRadius: 8,
-                        marginBottom: 10,
+                        marginBottom: 12,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#FB7185' }}>{issue.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#FB7185' }}>{issue.title}</div>
                         <span className="badge-status badge-blocked">CRITICAL</span>
                       </div>
 
-                      <div style={{ fontSize: 12, color: 'var(--fg-text-1)', lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
-                        {issue.message}
+                      {/* 4-Part Structured Explanation */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, fontSize: 11.5 }}>
+                        <div style={{ color: 'var(--fg-text-1)', lineHeight: 1.4 }}>
+                          <strong style={{ color: '#FB7185' }}>1. WHAT IS WRONG:</strong> {issue.message}
+                        </div>
+
+                        <div style={{ color: 'var(--fg-text-2)', lineHeight: 1.4 }}>
+                          <strong style={{ color: '#FBBF24' }}>2. WHY IT MATTERS:</strong> {issue.rule_violated ? `Violates rule "${issue.rule_violated}" — authorization or control flow invariant broken.` : 'Bypasses required approval gates or introduces unhandled failure states.'}
+                        </div>
+
+                        <div style={{ color: 'var(--fg-text-2)' }}>
+                          <strong style={{ color: 'var(--fg-cyan-light)' }}>3. WHERE IT OCCURS:</strong> {issue.affected_nodes?.length ? `Nodes: [${issue.affected_nodes.join(', ')}]` : 'Workflow Graph Structure'}
+                        </div>
+
+                        {issue.suggestion && (
+                          <div style={{ padding: '8px 12px', background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.2)', borderRadius: 6, color: 'var(--fg-cyan-light)', marginTop: 4 }}>
+                            <strong>4. HOW TO FIX IT:</strong> {issue.suggestion}
+                          </div>
+                        )}
                       </div>
-
-                      {issue.rule_violated && (
-                        <div style={{ fontSize: 11, color: 'var(--fg-text-3)', marginBottom: 6 }}>
-                          <strong>Rule Violated:</strong> {issue.rule_violated}
-                        </div>
-                      )}
-
-                      {issue.suggestion && (
-                        <div style={{ padding: '8px 12px', background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.2)', borderRadius: 6, fontSize: 11.5, color: 'var(--fg-cyan-light)', marginBottom: 10 }}>
-                          💡 <strong>Remediation:</strong> {issue.suggestion}
-                        </div>
-                      )}
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                         <button
@@ -345,25 +350,28 @@ export default function VerificationCenter() {
                     <div
                       key={warn.id}
                       style={{
-                        padding: '12px 14px',
+                        padding: '14px 16px',
                         background: 'rgba(245, 158, 11, 0.06)',
                         border: '1px solid rgba(245, 158, 11, 0.28)',
                         borderRadius: 8,
-                        marginBottom: 8,
+                        marginBottom: 10,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#FBBF24' }}>{warn.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24' }}>{warn.title}</div>
                         <span className="badge-status badge-warning">WARNING</span>
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--fg-text-2)', lineHeight: 1.4, marginBottom: 6 }}>
-                        {warn.message}
-                      </div>
-                      {warn.suggestion && (
-                        <div style={{ fontSize: 11, color: 'var(--fg-text-3)' }}>
-                          💡 {warn.suggestion}
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, marginBottom: 8 }}>
+                        <div style={{ color: 'var(--fg-text-2)' }}>
+                          <strong>Problem:</strong> {warn.message}
                         </div>
-                      )}
+                        {warn.suggestion && (
+                          <div style={{ color: 'var(--fg-cyan-light)', marginTop: 2 }}>
+                            💡 <strong>Remediation:</strong> {warn.suggestion}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

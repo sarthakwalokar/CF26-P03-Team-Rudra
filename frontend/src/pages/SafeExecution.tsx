@@ -96,7 +96,7 @@ export default function SafeExecution() {
             Live Workflow Execution Engine
           </h1>
           <p style={{ fontSize: 13, color: 'var(--fg-text-2)', marginTop: 4 }}>
-            Zero untrusted execution — only statically verified IR workflows are gated through to runtime.
+            Execution Gate — Only statically verified workflows are allowed to enter runtime. Zero untrusted execution.
           </p>
         </div>
 
@@ -107,26 +107,31 @@ export default function SafeExecution() {
       </div>
 
       {/* Pre-Flight Gate Status Banner */}
-      <div className="soc-card" style={{ padding: '16px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="soc-card" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${isBlocked ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.4)'}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-text-1)' }}>Workflow: {currentWorkflow.name}</span>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: isBlocked ? '#FB7185' : '#10B981' }} />
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-text-1)' }}>Workflow: {currentWorkflow.name}</span>
           </div>
 
           <div style={{ height: 16, width: 1, background: 'var(--fg-border)' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isBlocked ? (
-              <XCircle size={14} color="#FB7185" />
+              <XCircle size={15} color="#FB7185" />
             ) : isVerified ? (
-              <CheckCircle2 size={14} color="#34D399" />
+              <CheckCircle2 size={15} color="#34D399" />
             ) : (
-              <AlertTriangle size={14} color="#FBBF24" />
+              <AlertTriangle size={15} color="#FBBF24" />
             )}
-            <span style={{ fontSize: 12, fontWeight: 700, color: isBlocked ? '#FB7185' : isVerified ? '#34D399' : '#FBBF24' }}>
-              {isBlocked ? 'GATE STATUS: BLOCKED' : isVerified ? 'GATE STATUS: VERIFIED & READY' : 'GATE STATUS: UNVERIFIED'}
-            </span>
+            <div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: isBlocked ? '#FB7185' : isVerified ? '#34D399' : '#FBBF24' }}>
+                {isBlocked ? 'EXECUTION BLOCKED' : isVerified ? 'VERIFIED — SAFE TO EXECUTE' : 'UNVERIFIED — BLOCKED'}
+              </div>
+              <div style={{ fontSize: 10.5, color: 'var(--fg-text-3)', marginTop: 2 }}>
+                {isBlocked ? 'Workflow must pass required verification checks before runtime execution.' : 'Static analysis & 10 verification checks satisfied.'}
+              </div>
+            </div>
           </div>
         </div>
 

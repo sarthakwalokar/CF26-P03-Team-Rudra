@@ -31,17 +31,32 @@ import SettingsPage from './pages/SettingsPage';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
 
-const SIDEBAR_NAV = [
-  { path: '/', label: 'Overview', icon: BarChart3, exact: true },
-  { path: '/graph', label: 'Workflows', icon: Cpu },
-  { path: '/verify', label: 'Verification', icon: ShieldCheck },
-  { path: '/attack', label: 'Attack Lab', icon: Zap },
-  { path: '/repair', label: 'Auto-Repair', icon: Wrench },
-  { path: '/whatif', label: 'What-If', icon: FlaskConical },
-  { path: '/stress', label: 'Stress Test', icon: TestTube },
-  { path: '/execute', label: 'Execution', icon: Play },
-  { path: '/3d', label: '3D Twin', icon: Box },
-  { path: '/audit', label: 'Audit', icon: Terminal },
+const SIDEBAR_NAV_GROUPS = [
+  {
+    category: 'CORE COMPILER',
+    items: [
+      { path: '/', label: 'Overview', icon: BarChart3, exact: true },
+      { path: '/graph', label: 'Workflows', icon: Cpu },
+      { path: '/verify', label: 'Verification', icon: ShieldCheck },
+      { path: '/execute', label: 'Execution', icon: Play },
+    ],
+  },
+  {
+    category: 'ADVANCED VALIDATION',
+    items: [
+      { path: '/attack', label: 'Attack Lab', icon: Zap },
+      { path: '/repair', label: 'Auto-Repair', icon: Wrench },
+      { path: '/whatif', label: 'What-If', icon: FlaskConical },
+      { path: '/stress', label: 'Stress Test', icon: TestTube },
+    ],
+  },
+  {
+    category: 'OBSERVABILITY',
+    items: [
+      { path: '/3d', label: '3D Twin', icon: Box },
+      { path: '/audit', label: 'Audit', icon: Terminal },
+    ],
+  },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -219,56 +234,59 @@ function LeftVerticalSidebar({
         </div>
       )}
 
-      {/* Vertical Navigation Items */}
-      <nav style={{ flex: 1, padding: collapsed ? '12px 8px' : '12px 10px', display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
-        {!collapsed && (
-          <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--fg-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 10px', marginBottom: 2 }}>
-            NAVIGATION
+      {/* Vertical Categorized Navigation Items */}
+      <nav style={{ flex: 1, padding: collapsed ? '12px 8px' : '12px 10px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
+        {SIDEBAR_NAV_GROUPS.map((group) => (
+          <div key={group.category} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {!collapsed && (
+              <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--fg-text-4)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '2px 10px', marginBottom: 2 }}>
+                {group.category}
+              </div>
+            )}
+            {group.items.map((item) => {
+              const isActive = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  title={collapsed ? item.label : undefined}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    gap: 10,
+                    padding: collapsed ? '10px 0' : '7px 12px',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontSize: 12.5,
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? 'var(--fg-cyan-light)' : 'var(--fg-text-2)',
+                    background: isActive ? 'rgba(14, 165, 233, 0.12)' : 'transparent',
+                    border: `1px solid ${isActive ? 'rgba(14, 165, 233, 0.28)' : 'transparent'}`,
+                    transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'var(--fg-bg-3)';
+                      e.currentTarget.style.color = 'var(--fg-text-1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--fg-text-2)';
+                    }
+                  }}
+                >
+                  <Icon size={16} color={isActive ? 'var(--fg-cyan-light)' : 'var(--fg-text-3)'} />
+                  {!collapsed && <span>{item.label}</span>}
+                </NavLink>
+              );
+            })}
           </div>
-        )}
-
-        {SIDEBAR_NAV.map((item) => {
-          const isActive = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
-          const Icon = item.icon;
-
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              title={collapsed ? item.label : undefined}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                gap: 10,
-                padding: collapsed ? '10px 0' : '8px 12px',
-                borderRadius: 8,
-                textDecoration: 'none',
-                fontSize: 12.5,
-                fontWeight: isActive ? 600 : 500,
-                color: isActive ? 'var(--fg-cyan-light)' : 'var(--fg-text-2)',
-                background: isActive ? 'rgba(14, 165, 233, 0.12)' : 'transparent',
-                border: `1px solid ${isActive ? 'rgba(14, 165, 233, 0.28)' : 'transparent'}`,
-                transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'var(--fg-bg-3)';
-                  e.currentTarget.style.color = 'var(--fg-text-1)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--fg-text-2)';
-                }
-              }}
-            >
-              <Icon size={16} color={isActive ? 'var(--fg-cyan-light)' : 'var(--fg-text-3)'} />
-              {!collapsed && <span>{item.label}</span>}
-            </NavLink>
-          );
-        })}
+        ))}
       </nav>
 
       {/* Bottom Footer: Settings & System Status */}
