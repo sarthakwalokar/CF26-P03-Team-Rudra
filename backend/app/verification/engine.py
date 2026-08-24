@@ -200,6 +200,23 @@ def check_authorization(workflow: WorkflowIR, G: nx.DiGraph, node_map: Dict[str,
                     suggestion=f"Add '{node.action}:approve' to required_permissions for '{node.name}'.",
                 ))
 
+        # Separation of Duties / Low-privilege actor check
+        low_privilege_actors = {"employee", "requester", "user", "client", "contractor", "applicant", "submitter"}
+        if actor_lower in low_privilege_actors and (node.type == NodeType.APPROVAL or any(term in p.lower() for p in node.required_permissions for term in ["approve", "finance", "admin", "grant", "refund"])):
+            issues.append(_make_issue(
+                check_name=CHECK_AUTHORIZATION,
+                severity=IssueSeverity.CRITICAL,
+                title=f"Unauthorized Actor: Separation of Duties Violation",
+                message=(
+                    f"Low-privilege actor '{node.actor}' is assigned to high-privilege step '{node.name}'. "
+                    f"Submitters and low-privilege users cannot approve their own requests or execute "
+                    f"sensitive financial/administrative authorizations."
+                ),
+                affected_nodes=[node.id],
+                rule_violated="Separation of Duties: Submitter/employee cannot hold approval authority",
+                suggestion=f"Reassign '{node.name}' to an authorized role (e.g., 'Finance Manager', 'Compliance Officer').",
+            ))
+
     return issues
 
 

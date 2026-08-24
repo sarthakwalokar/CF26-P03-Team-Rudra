@@ -216,6 +216,7 @@ def simulate_actor_unavailable(workflow: WorkflowIR, node_id: str) -> Simulation
 
 
 SIMULATION_FUNCTIONS = {
+    "service_outage": simulate_service_unavailable,
     "service_unavailable": simulate_service_unavailable,
     "approval_rejected": simulate_approval_rejected,
     "timeout": simulate_timeout,
