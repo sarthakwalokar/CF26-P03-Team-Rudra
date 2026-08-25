@@ -4,7 +4,7 @@ All workflow lifecycle endpoints: generate, verify, attack, repair, simulate, st
 """
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
@@ -142,7 +142,7 @@ async def verify(
         status_map = {"SAFE": WorkflowStatus.VERIFIED, "WARNING": WorkflowStatus.WARNING, "BLOCKED": WorkflowStatus.BLOCKED}
         row.status = status_map.get(result.status.value, WorkflowStatus.DRAFT).value
         row.risk_score = result.score
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(timezone.utc)
         updated_ir = WorkflowIR.model_validate_json(row.ir_json)
         updated_ir.status = status_map.get(result.status.value, WorkflowStatus.DRAFT)
         updated_ir.risk_score = result.score

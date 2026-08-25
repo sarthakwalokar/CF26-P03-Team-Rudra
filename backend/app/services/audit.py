@@ -1,7 +1,7 @@
 """Audit trail service — logs all important FlowGuard events."""
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
@@ -25,7 +25,7 @@ async def log_event(
         title=title,
         details_json=json.dumps(details or {}),
         severity=severity,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
     )
     db.add(log)
     await db.flush()

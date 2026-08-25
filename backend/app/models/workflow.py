@@ -1,6 +1,6 @@
 """SQLAlchemy ORM models for persistent storage."""
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Float, Integer, Boolean, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
@@ -15,8 +15,8 @@ class WorkflowModel(Base):
     status = Column(String, default="DRAFT")
     risk_score = Column(Float, default=0.0)
     ir_json = Column(Text, nullable=False)  # Full WorkflowIR JSON
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     versions = relationship("WorkflowVersionModel", back_populates="workflow", cascade="all, delete-orphan")
     verification_runs = relationship("VerificationRunModel", back_populates="workflow", cascade="all, delete-orphan")
@@ -33,7 +33,7 @@ class WorkflowVersionModel(Base):
     version = Column(String, nullable=False)
     ir_json = Column(Text, nullable=False)
     change_description = Column(Text, default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     workflow = relationship("WorkflowModel", back_populates="versions")
 
 
@@ -47,7 +47,7 @@ class VerificationRunModel(Base):
     issues_json = Column(Text, default="[]")
     passed_checks_json = Column(Text, default="[]")
     failed_checks_json = Column(Text, default="[]")
-    verified_at = Column(DateTime, default=datetime.utcnow)
+    verified_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     workflow = relationship("WorkflowModel", back_populates="verification_runs")
 
 
@@ -60,7 +60,7 @@ class AttackRunModel(Base):
     critical_count = Column(Integer, default=0)
     findings_json = Column(Text, default="[]")
     overall_security_score = Column(Float, default=100.0)
-    attacked_at = Column(DateTime, default=datetime.utcnow)
+    attacked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     workflow = relationship("WorkflowModel", back_populates="attack_runs")
 
 
@@ -75,7 +75,7 @@ class StressTestRunModel(Base):
     warnings = Column(Integer, default=0)
     robustness_score = Column(Float, default=0.0)
     breakdown_json = Column(Text, default="{}")
-    completed_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     workflow = relationship("WorkflowModel", back_populates="stress_test_runs")
 
 
@@ -100,5 +100,5 @@ class AuditLogModel(Base):
     title = Column(String, nullable=False)
     details_json = Column(Text, default="{}")
     severity = Column(String, default="INFO")
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     workflow = relationship("WorkflowModel", back_populates="audit_logs")

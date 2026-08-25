@@ -13,7 +13,7 @@ Rules:
 from __future__ import annotations
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, Dict, List, Optional, Set
 
 from app.schemas.workflow import (
@@ -149,7 +149,7 @@ class WorkflowExecutor:
         Run the workflow state machine to completion.
         Returns a complete ExecutionRun with all events.
         """
-        self.started_at = datetime.utcnow()
+        self.started_at = datetime.now(timezone.utc)
         node_map = self._get_node_map()
 
         self._emit(ExecutionEventType.STARTED,
@@ -276,10 +276,10 @@ class WorkflowExecutor:
                     self._emit(ExecutionEventType.FAILED,
                                f"Critical failure at '{node.name}' — execution halted",
                                node_id=node_id, node_name=node.name)
-                    self.completed_at = datetime.utcnow()
+                    self.completed_at = datetime.now(timezone.utc)
                     return self._build_run("FAILED")
 
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)
         duration = int((self.completed_at - self.started_at).total_seconds() * 1000)
 
         # Check if END was reached

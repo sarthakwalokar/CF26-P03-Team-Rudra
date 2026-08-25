@@ -3,7 +3,7 @@ Workflow IR (Intermediate Representation) Pydantic Schemas
 This is the core typed data model — the source of truth for the entire system.
 """
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
@@ -124,8 +124,8 @@ class WorkflowIR(BaseModel):
     nodes: List[WorkflowNode]
     edges: List[WorkflowEdge]
     metadata: WorkflowMetadata = Field(default_factory=WorkflowMetadata)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @field_validator("nodes")
     @classmethod
@@ -181,7 +181,7 @@ class VerificationResult(BaseModel):
     affected_nodes: List[str] = Field(default_factory=list)
     affected_edges: List[str] = Field(default_factory=list)
     repair_suggestions: List[str] = Field(default_factory=list)
-    verified_at: datetime = Field(default_factory=datetime.utcnow)
+    verified_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Attack Models ──────────────────────────────────────────────────────────────
@@ -225,7 +225,7 @@ class AttackResult(BaseModel):
     warning_count: int
     findings: List[AttackFinding] = Field(default_factory=list)
     overall_security_score: float
-    attacked_at: datetime = Field(default_factory=datetime.utcnow)
+    attacked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Repair Models ──────────────────────────────────────────────────────────────
@@ -258,7 +258,7 @@ class RepairProposal(BaseModel):
     original_workflow: WorkflowIR
     repaired_workflow: WorkflowIR
     verification_result: Optional[VerificationResult] = None
-    proposed_at: datetime = Field(default_factory=datetime.utcnow)
+    proposed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Simulation Models ──────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ class SimulationResult(BaseModel):
     verification_result: VerificationResult
     can_continue: bool
     explanation: str
-    simulated_at: datetime = Field(default_factory=datetime.utcnow)
+    simulated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Stress Test Models ─────────────────────────────────────────────────────────
@@ -308,7 +308,7 @@ class StressTestResult(BaseModel):
     warnings: int
     robustness_score: float
     scenario_breakdown: Dict[str, Dict[str, int]]
-    completed_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Execution Models ───────────────────────────────────────────────────────────
@@ -333,7 +333,7 @@ class ExecutionEvent(BaseModel):
     node_name: Optional[str] = None
     event_type: ExecutionEventType
     message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     duration_ms: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
@@ -435,4 +435,4 @@ class AuditLog(BaseModel):
     title: str
     details: Dict[str, Any] = Field(default_factory=dict)
     severity: str = "INFO"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
