@@ -86,9 +86,25 @@ export default function IRInspector() {
           </pre>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Metadata Bar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Metadata Bar & Why IR is Critical Callout */}
           <div className="soc-card" style={{ padding: 20 }}>
+            {/* Problem Statement Callout */}
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid rgba(14, 165, 233, 0.25)',
+              borderRadius: 8,
+              marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg-cyan-light)', marginBottom: 4 }}>
+                💡 WHY FORMAL IR IS NECESSARY (P-03 PRINCIPLE)
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--fg-text-2)', lineHeight: 1.5 }}>
+                Natural language lacks formal execution semantics. The compiler formalizes entities, roles, preconditions, and transition rules into this strongly-typed Intermediate Representation (Workflow IR AST), enabling mathematical static verification before execution.
+              </div>
+            </div>
+
             <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--fg-text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>
               WORKFLOW METADATA & COMPILE CONTEXT
             </div>

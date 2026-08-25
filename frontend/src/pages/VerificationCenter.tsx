@@ -297,22 +297,26 @@ export default function VerificationCenter() {
                       </div>
 
                       {/* 4-Part Structured Explanation */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, fontSize: 11.5 }}>
-                        <div style={{ color: 'var(--fg-text-1)', lineHeight: 1.4 }}>
-                          <strong style={{ color: '#FB7185' }}>1. WHAT IS WRONG:</strong> {issue.message}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, fontSize: 12 }}>
+                        <div style={{ color: 'var(--fg-text-1)', lineHeight: 1.45, background: 'rgba(244, 63, 94, 0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                          <strong style={{ color: '#FB7185', display: 'block', fontSize: 11, letterSpacing: '0.04em', marginBottom: 2 }}>WHAT FAILED:</strong>
+                          {issue.message}
                         </div>
 
-                        <div style={{ color: 'var(--fg-text-2)', lineHeight: 1.4 }}>
-                          <strong style={{ color: '#FBBF24' }}>2. WHY IT MATTERS:</strong> {issue.rule_violated ? `Violates rule "${issue.rule_violated}" — authorization or control flow invariant broken.` : 'Bypasses required approval gates or introduces unhandled failure states.'}
+                        <div style={{ color: 'var(--fg-text-2)', lineHeight: 1.45, background: 'rgba(245, 158, 11, 0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <strong style={{ color: '#FBBF24', display: 'block', fontSize: 11, letterSpacing: '0.04em', marginBottom: 2 }}>WHY IT FAILED:</strong>
+                          {issue.rule_violated ? `Violates rule [${issue.rule_violated}]: Safety or authorization invariant is broken.` : 'Bypasses required approval gates, breaks dependency order, or introduces deadlock.'}
                         </div>
 
-                        <div style={{ color: 'var(--fg-text-2)' }}>
-                          <strong style={{ color: 'var(--fg-cyan-light)' }}>3. WHERE IT OCCURS:</strong> {issue.affected_nodes?.length ? `Nodes: [${issue.affected_nodes.join(', ')}]` : 'Workflow Graph Structure'}
+                        <div style={{ color: 'var(--fg-text-2)', background: 'rgba(14, 165, 233, 0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(14, 165, 233, 0.2)' }}>
+                          <strong style={{ color: 'var(--fg-cyan-light)', display: 'block', fontSize: 11, letterSpacing: '0.04em', marginBottom: 2 }}>WHERE IT FAILED:</strong>
+                          {issue.affected_nodes?.length ? `Nodes: [${issue.affected_nodes.join(', ')}]` : (issue.affected_edges?.length ? `Edges: [${issue.affected_edges.join(', ')}]` : 'Workflow Graph Structure')}
                         </div>
 
                         {issue.suggestion && (
-                          <div style={{ padding: '8px 12px', background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.2)', borderRadius: 6, color: 'var(--fg-cyan-light)', marginTop: 4 }}>
-                            <strong>4. HOW TO FIX IT:</strong> {issue.suggestion}
+                          <div style={{ padding: '8px 12px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 6, color: '#34D399' }}>
+                            <strong style={{ color: '#34D399', display: 'block', fontSize: 11, letterSpacing: '0.04em', marginBottom: 2 }}>HOW TO FIX IT:</strong>
+                            {issue.suggestion}
                           </div>
                         )}
                       </div>
@@ -350,25 +354,28 @@ export default function VerificationCenter() {
                     <div
                       key={warn.id}
                       style={{
-                        padding: '14px 16px',
+                        padding: '16px 18px',
                         background: 'rgba(245, 158, 11, 0.06)',
                         border: '1px solid rgba(245, 158, 11, 0.28)',
                         borderRadius: 8,
-                        marginBottom: 10,
+                        marginBottom: 12,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24' }}>{warn.title}</div>
                         <span className="badge-status badge-warning">WARNING</span>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, marginBottom: 8 }}>
                         <div style={{ color: 'var(--fg-text-2)' }}>
-                          <strong>Problem:</strong> {warn.message}
+                          <strong style={{ color: '#FBBF24' }}>WHAT FAILED:</strong> {warn.message}
+                        </div>
+                        <div style={{ color: 'var(--fg-text-2)' }}>
+                          <strong style={{ color: 'var(--fg-cyan-light)' }}>WHERE IT FAILED:</strong> {warn.affected_nodes?.length ? `Nodes: [${warn.affected_nodes.join(', ')}]` : 'Workflow Policy Specification'}
                         </div>
                         {warn.suggestion && (
-                          <div style={{ color: 'var(--fg-cyan-light)', marginTop: 2 }}>
-                            💡 <strong>Remediation:</strong> {warn.suggestion}
+                          <div style={{ color: '#34D399', background: 'rgba(16, 185, 129, 0.06)', padding: '6px 10px', borderRadius: 4 }}>
+                            <strong>HOW TO FIX IT:</strong> {warn.suggestion}
                           </div>
                         )}
                       </div>

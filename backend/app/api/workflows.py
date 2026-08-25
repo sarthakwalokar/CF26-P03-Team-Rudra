@@ -294,21 +294,23 @@ async def execute(
     request: ExecuteWorkflowRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    if request.verification_result.status.value == "BLOCKED":
+    # Server-side deterministic zero-untrusted check: re-verify the workflow structure directly
+    actual_verification = verify_workflow(request.workflow)
+    if actual_verification.status == VerificationStatus.BLOCKED or request.verification_result.status.value == "BLOCKED":
         await log_event(db, request.workflow_id, AuditEventType.EXECUTION_BLOCKED,
-                        f"Execution BLOCKED — workflow not verified",
+                        f"Execution BLOCKED — deterministic verification failed with {len(actual_verification.issues)} critical issue(s)",
                         severity="CRITICAL")
         raise HTTPException(
             status_code=403,
-            detail="Execution BLOCKED: Workflow has unresolved critical verification failures."
+            detail=f"Execution BLOCKED: Workflow has {len(actual_verification.issues)} unresolved critical verification failures."
         )
 
     await log_event(db, request.workflow_id, AuditEventType.EXECUTION_STARTED,
                     f"Execution started for '{request.workflow.name}'",
-                    details={"verification_score": request.verification_result.score})
+                    details={"verification_score": actual_verification.score})
 
     try:
-        run = await execute_workflow(request.workflow, request.verification_result)
+        run = await execute_workflow(request.workflow, actual_verification)
     except ExecutionBlockedError as e:
         await log_event(db, request.workflow_id, AuditEventType.EXECUTION_BLOCKED,
                         str(e), severity="CRITICAL")

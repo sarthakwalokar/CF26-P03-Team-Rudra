@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { History, GitBranch, ArrowRight, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { listWorkflows, getWorkflow, deleteWorkflow } from '../services/api';
+import { listWorkflows, getWorkflow, deleteWorkflow, verifyWorkflow } from '../services/api';
 import { useFlowGuardStore } from '../lib/store';
 import { getStatusBadgeClass, formatDateTime } from '../lib/utils';
 
 export default function WorkflowHistory() {
   const navigate = useNavigate();
-  const { setCurrentWorkflow } = useFlowGuardStore();
+  const { setCurrentWorkflow, setVerificationResult } = useFlowGuardStore();
   const qc = useQueryClient();
 
   const { data: workflows, isLoading } = useQuery({
@@ -27,6 +27,10 @@ export default function WorkflowHistory() {
     try {
       const wf = await getWorkflow(id);
       setCurrentWorkflow(wf);
+      try {
+        const vResult = await verifyWorkflow(wf);
+        setVerificationResult(vResult);
+      } catch {}
       toast.success(`Loaded: ${wf.name}`);
       navigate('/graph');
     } catch (e: any) { toast.error(e.message); }

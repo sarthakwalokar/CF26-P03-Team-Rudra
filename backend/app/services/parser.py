@@ -25,16 +25,17 @@ from app.schemas.workflow import (
 
 DEMO_PRESETS = {
     "procurement": {
-        "name": "Procurement Approval Workflow",
-        "description": "Enterprise procurement process with vendor verification and finance approval.",
+        "name": "Case 1: Procurement Approval Workflow (SAFE / HERO)",
+        "description": "Enterprise procurement process with vendor verification, budget check, and finance approval.",
         "policy_text": "Verify the vendor, check the budget, obtain finance approval, and create the procurement ticket.",
         "nodes": [
             {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK", "is_critical": False},
-            {"id": "n1", "name": "Vendor Verification", "type": "VALIDATION", "action": "verify_vendor", "actor": "Procurement Officer", "required_permissions": ["vendor:verify"], "outputs": ["vendor_verified"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Verify vendor credentials, compliance, and standing."},
-            {"id": "n2", "name": "Budget Check", "type": "VALIDATION", "action": "check_budget", "actor": "Finance System", "required_permissions": ["budget:read"], "inputs": ["vendor_verified"], "outputs": ["budget_approved"], "preconditions": ["vendor_verified == true"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Verify available budget for procurement."},
+            {"id": "n1", "name": "Verify Vendor", "type": "VALIDATION", "action": "verify_vendor", "actor": "Procurement Officer", "required_permissions": ["vendor:verify"], "outputs": ["vendor_verified"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Verify vendor credentials, compliance, and standing."},
+            {"id": "n2", "name": "Check Budget", "type": "VALIDATION", "action": "check_budget", "actor": "Finance System", "required_permissions": ["budget:read"], "inputs": ["vendor_verified"], "outputs": ["budget_approved"], "preconditions": ["vendor_verified == true"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Verify available budget for procurement."},
             {"id": "n3", "name": "Finance Approval", "type": "APPROVAL", "action": "approve_finance", "actor": "Finance Manager", "required_permissions": ["finance:approve", "procurement:approve"], "inputs": ["budget_approved"], "outputs": ["finance_approved"], "preconditions": ["budget_approved == true"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Finance Manager must approve the procurement request."},
             {"id": "n4", "name": "Create Procurement Ticket", "type": "ACTION", "action": "create_ticket", "actor": "Procurement System", "required_permissions": ["ticket:create"], "inputs": ["finance_approved"], "preconditions": ["finance_approved == true"], "risk_level": "LOW", "failure_policy": "RETRY", "retry_count": 3, "description": "Create the procurement ticket in the system."},
-            {"id": "n5", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n5", "name": "Notify Requester", "type": "ACTION", "action": "notify_requester", "actor": "Notification Service", "required_permissions": ["notification:send"], "inputs": ["finance_approved"], "preconditions": ["finance_approved == true"], "risk_level": "LOW", "failure_policy": "RETRY", "retry_count": 2, "description": "Send confirmation to requester."},
+            {"id": "n6", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
         ],
         "edges": [
             {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
@@ -42,8 +43,118 @@ DEMO_PRESETS = {
             {"id": "e2", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL", "required_state": "budget_approved"},
             {"id": "e3", "source": "n3", "target": "n4", "transition_type": "SEQUENTIAL", "required_state": "finance_approved"},
             {"id": "e4", "source": "n4", "target": "n5", "transition_type": "SEQUENTIAL"},
+            {"id": "e5", "source": "n5", "target": "n6", "transition_type": "SEQUENTIAL"},
         ],
         "ambiguities": [],
+    },
+    "case_2_ambiguous": {
+        "name": "Case 2: Semantic Ambiguity Workflow (BLOCKED)",
+        "description": "Policy containing non-deterministic qualifiers ('appropriate') and unspecified roles ('Reviewer', 'Approver').",
+        "policy_text": "Review the request and approve it when appropriate.",
+        "nodes": [
+            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n1", "name": "Review Request", "type": "HUMAN_REVIEW", "action": "review_request", "actor": "Reviewer", "required_permissions": [], "outputs": ["reviewed"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "description": "Generic review step with undefined criteria."},
+            {"id": "n2", "name": "Approve Request", "type": "APPROVAL", "action": "approve_request", "actor": "Approver", "required_permissions": [], "inputs": ["reviewed"], "outputs": ["approved"], "preconditions": ["when_appropriate == true"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Approval conditioned on undefined criteria ('when appropriate')."},
+            {"id": "n3", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+        ],
+        "edges": [
+            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
+            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL"},
+            {"id": "e2", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL"},
+        ],
+        "ambiguities": [
+            "'appropriate' has no machine-verifiable definition.",
+            "Actor 'Reviewer' is ambiguous — specify an explicit organizational role.",
+            "Actor 'Approver' has no explicit permissions declared — any actor could approve.",
+            "Precondition 'when_appropriate == true' relies on undefined runtime heuristic."
+        ],
+    },
+    "case_3_approval_bypass": {
+        "name": "Case 3: Approval Bypass Workflow (BLOCKED)",
+        "description": "Flawed procurement policy where Procurement Ticket is issued BEFORE Finance Approval occurs.",
+        "policy_text": "Check the purchase request, create the procurement ticket, and obtain finance approval if necessary.",
+        "nodes": [
+            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n1", "name": "Check Purchase Request", "type": "VALIDATION", "action": "check_request", "actor": "Procurement Officer", "required_permissions": ["procurement:read"], "outputs": ["request_checked"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Check initial request details."},
+            {"id": "n2", "name": "Create Procurement Ticket", "type": "ACTION", "action": "create_ticket", "actor": "Procurement System", "required_permissions": ["ticket:create"], "inputs": ["finance_approved"], "preconditions": ["finance_approved == true"], "outputs": ["ticket_created"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Create procurement ticket prematurely before approval."},
+            {"id": "n3", "name": "Finance Approval", "type": "APPROVAL", "action": "approve_finance", "actor": "Finance Manager", "required_permissions": ["finance:approve"], "inputs": ["ticket_created"], "outputs": ["finance_approved"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Finance Approval positioned after ticket creation, enabling unapproved ticket issuance."},
+            {"id": "n4", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+        ],
+        "edges": [
+            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
+            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL"},
+            {"id": "e2", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL"},
+            {"id": "e3", "source": "n3", "target": "n4", "transition_type": "SEQUENTIAL"},
+        ],
+        "ambiguities": [
+            "Procurement ticket creation occurs before required financial authorization.",
+            "Ordering Violation: 'Create Procurement Ticket' requires 'finance_approved == true' which is produced downstream.",
+            "Conditional 'if necessary' creates an ambiguous optional approval branch."
+        ],
+    },
+    "case_4_unauthorized_actor": {
+        "name": "Case 4: Unauthorized Actor / Separation of Duties (BLOCKED)",
+        "description": "Low-privilege Employee role assigned to execute high-privilege financial approval.",
+        "policy_text": "Employee verifies the request and approves the finance transaction.",
+        "nodes": [
+            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n1", "name": "Verify Request", "type": "VALIDATION", "action": "verify_request", "actor": "Employee", "required_permissions": ["request:verify"], "outputs": ["request_verified"], "risk_level": "LOW", "failure_policy": "BLOCK", "description": "Employee verifies own request."},
+            {"id": "n2", "name": "Approve Finance Transaction", "type": "APPROVAL", "action": "approve_finance", "actor": "Employee", "required_permissions": ["finance:approve"], "inputs": ["request_verified"], "outputs": ["finance_approved"], "preconditions": ["request_verified == true"], "risk_level": "CRITICAL", "failure_policy": "BLOCK", "is_critical": True, "description": "Employee unauthorized to perform financial approval (Privilege Escalation)."},
+            {"id": "n3", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+        ],
+        "edges": [
+            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
+            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL", "required_state": "request_verified"},
+            {"id": "e2", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL", "required_state": "finance_approved"},
+        ],
+        "ambiguities": [
+            "Employee role is not authorized for financial approval.",
+            "Separation of Duties violation: Submitter/requester cannot approve their own financial transactions."
+        ],
+    },
+    "case_5_circular": {
+        "name": "Case 5: Circular Dependency Workflow (BLOCKED)",
+        "description": "Non-terminating state loop between Finance Approval and Compliance Review (Approval → Review → Approval).",
+        "policy_text": "Approval transitions to review, which routes back to approval.",
+        "nodes": [
+            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n1", "name": "Finance Approval", "type": "APPROVAL", "action": "approve_finance", "actor": "Finance Manager", "required_permissions": ["finance:approve"], "inputs": ["review_completed"], "outputs": ["finance_approved"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Finance approval awaiting review."},
+            {"id": "n2", "name": "Compliance Review", "type": "HUMAN_REVIEW", "action": "review_compliance", "actor": "Compliance Officer", "required_permissions": ["compliance:review"], "inputs": ["finance_approved"], "outputs": ["review_completed"], "risk_level": "HIGH", "failure_policy": "BLOCK", "is_critical": True, "description": "Compliance review routing back to Finance approval."},
+            {"id": "n3", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+        ],
+        "edges": [
+            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
+            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL", "required_state": "finance_approved"},
+            {"id": "e2", "source": "n2", "target": "n1", "transition_type": "SEQUENTIAL", "label": "ILLEGAL CYCLE (Review -> Approval)", "required_state": "review_completed"},
+            {"id": "e3", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL"},
+        ],
+        "ambiguities": [
+            "Circular dependency can cause non-terminating execution loop (Deadlock).",
+            "Illegal cycle detected between 'Finance Approval' and 'Compliance Review'."
+        ],
+    },
+    "case_6_unreachable": {
+        "name": "Case 6: Unreachable Workflow State (BLOCKED)",
+        "description": "Workflow graph containing a disconnected state that has no path from START.",
+        "policy_text": "Verify the vendor, check the budget, and create the procurement ticket. (Offline Audit Logger is disconnected).",
+        "nodes": [
+            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+            {"id": "n1", "name": "Verify Vendor", "type": "VALIDATION", "action": "verify_vendor", "actor": "Procurement Officer", "required_permissions": ["vendor:verify"], "outputs": ["vendor_verified"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "is_critical": True, "description": "Verify vendor credentials."},
+            {"id": "n2", "name": "Check Budget", "type": "VALIDATION", "action": "check_budget", "actor": "Finance System", "required_permissions": ["budget:read"], "inputs": ["vendor_verified"], "outputs": ["budget_approved"], "preconditions": ["vendor_verified == true"], "risk_level": "MEDIUM", "failure_policy": "BLOCK", "description": "Verify budget availability."},
+            {"id": "n3", "name": "Offline Audit Logger", "type": "SERVICE", "action": "log_audit", "actor": "Security Logger", "required_permissions": ["audit:log"], "risk_level": "HIGH", "failure_policy": "BLOCK", "description": "Disconnected node with no path from START."},
+            {"id": "n4", "name": "Create Procurement Ticket", "type": "ACTION", "action": "create_ticket", "actor": "Procurement System", "required_permissions": ["ticket:create"], "inputs": ["budget_approved"], "preconditions": ["budget_approved == true"], "risk_level": "LOW", "failure_policy": "RETRY", "retry_count": 2, "description": "Create procurement ticket."},
+            {"id": "n5", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
+        ],
+        "edges": [
+            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
+            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL", "required_state": "vendor_verified"},
+            {"id": "e2", "source": "n2", "target": "n4", "transition_type": "SEQUENTIAL", "required_state": "budget_approved"},
+            {"id": "e3", "source": "n4", "target": "n5", "transition_type": "SEQUENTIAL"},
+        ],
+        "ambiguities": [
+            "This state cannot be reached from START (Node 'Offline Audit Logger' is disconnected).",
+            "Dead node detected: 'Offline Audit Logger' will never execute during runtime."
+        ],
     },
     "refund": {
         "name": "Customer Refund Workflow",
@@ -104,26 +215,6 @@ DEMO_PRESETS = {
         ],
         "ambiguities": ["Ordering Violation: Procurement Ticket executes before Finance Approval is granted."],
     },
-    "circular_workflow": {
-        "name": "Circular Deadlock Workflow",
-        "description": "Workflow containing an illegal circular dependency between state transitions (A → B → C → B).",
-        "policy_text": "Step A initiates, transitions to Step B, which invokes Step C, which routes back to Step B.",
-        "nodes": [
-            {"id": "n0", "name": "Start", "type": "START", "action": "begin_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
-            {"id": "n1", "name": "Step A (Initiation)", "type": "ACTION", "action": "initiate_a", "actor": "Operator", "required_permissions": ["step:a"], "outputs": ["a_done"], "risk_level": "LOW", "failure_policy": "BLOCK"},
-            {"id": "n2", "name": "Step B (Processing)", "type": "SERVICE", "action": "process_b", "actor": "Core Engine", "required_permissions": ["step:b"], "inputs": ["a_done", "c_done"], "outputs": ["b_done"], "preconditions": ["a_done == true"], "risk_level": "MEDIUM", "failure_policy": "BLOCK"},
-            {"id": "n3", "name": "Step C (Verification)", "type": "VALIDATION", "action": "verify_c", "actor": "Security Service", "required_permissions": ["step:c"], "inputs": ["b_done"], "outputs": ["c_done"], "risk_level": "HIGH", "failure_policy": "BLOCK"},
-            {"id": "n4", "name": "End", "type": "END", "action": "complete_workflow", "actor": "System", "risk_level": "LOW", "failure_policy": "BLOCK"},
-        ],
-        "edges": [
-            {"id": "e0", "source": "n0", "target": "n1", "transition_type": "SEQUENTIAL"},
-            {"id": "e1", "source": "n1", "target": "n2", "transition_type": "SEQUENTIAL"},
-            {"id": "e2", "source": "n2", "target": "n3", "transition_type": "SEQUENTIAL"},
-            {"id": "e3", "source": "n3", "target": "n2", "transition_type": "SEQUENTIAL", "label": "CIRCULAR LOOP (C -> B)"},
-            {"id": "e4", "source": "n3", "target": "n4", "transition_type": "SEQUENTIAL"},
-        ],
-        "ambiguities": ["Circular Loop: State transition creates a circular deadlock (Step B -> Step C -> Step B)."],
-    },
     "customer_onboarding": {
         "name": "Customer Onboarding Workflow",
         "description": "Enterprise customer onboarding with KYC, tier assignment, compliance approval, and activation.",
@@ -151,18 +242,35 @@ DEMO_PRESETS = {
 def _detect_preset(policy_text: str) -> Optional[str]:
     """Detect if the input matches a known demo preset."""
     lower = policy_text.lower()
-    if "circular" in lower or ("step a" in lower and "step b" in lower and "step c" in lower) or "a -> b -> c" in lower:
-        return "circular_workflow"
-    if "create" in lower and "ticket" in lower and "then" in lower and "approval" in lower:
-        # Invalid procurement: ticket created before approval
-        return "invalid_procurement"
+    
+    # Case 2: Ambiguity
+    if "appropriate" in lower or ("review the request" in lower and "approve" in lower):
+        return "case_2_ambiguous"
+
+    # Case 3: Approval Bypass (if necessary / before approval)
+    if ("if necessary" in lower and "ticket" in lower) or ("create" in lower and "ticket" in lower and "then" in lower and "approval" in lower):
+        return "case_3_approval_bypass"
+
+    # Case 4: Unauthorized Actor (Employee approves)
+    if "employee" in lower and ("finance" in lower or "transaction" in lower) and ("approves" in lower or "approve" in lower):
+        return "case_4_unauthorized_actor"
+
+    # Case 5: Circular
+    if "circular" in lower or ("approval" in lower and "review" in lower and "routes back" in lower) or ("step a" in lower and "step b" in lower and "step c" in lower) or "a -> b -> c" in lower:
+        return "case_5_circular"
+
+    # Case 6: Unreachable
+    if "unreachable" in lower or "disconnected" in lower or "audit logger" in lower:
+        return "case_6_unreachable"
+
+    # Presets & Case 1
     if any(kw in lower for kw in ["onboarding", "tier", "compliance signoff", "activate account"]):
         return "customer_onboarding"
     if any(kw in lower for kw in ["vendor", "procurement", "budget", "procurement ticket"]):
         return "procurement"
     if any(kw in lower for kw in ["refund", "kyc", "fraud", "customer identity"]):
         return "refund"
-    if any(kw in lower for kw in ["employee", "provision", "system access", "employee identity"]):
+    if any(kw in lower for kw in ["provision", "system access", "employee identity"]):
         return "employee_access"
     return None
 

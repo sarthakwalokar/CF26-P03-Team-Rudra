@@ -663,45 +663,47 @@ def check_ambiguity(workflow: WorkflowIR, node_map: Dict[str, WorkflowNode]) -> 
         for precond in node.preconditions:
             for pattern in AMBIGUOUS_CONDITION_PATTERNS:
                 if pattern.lower() in precond.lower():
+                    is_crit_ambiguity = (node.type in [NodeType.APPROVAL, NodeType.ACTION] and node.is_critical) or ("appropriate" in pattern.lower())
                     issues.append(_make_issue(
                         check_name=CHECK_AMBIGUITY,
-                        severity=IssueSeverity.WARNING,
-                        title=f"Ambiguous Condition in '{node.name}'",
+                        severity=IssueSeverity.CRITICAL if is_crit_ambiguity else IssueSeverity.WARNING,
+                        title=f"Semantic Ambiguity in '{node.name}' ('{pattern}')",
                         message=(
                             f"Precondition '{precond}' in node '{node.name}' contains "
-                            f"ambiguous qualifier '{pattern}'. This creates non-deterministic "
-                            f"execution paths that cannot be reliably verified."
+                            f"ambiguous qualifier '{pattern}'. '{pattern}' has no machine-verifiable definition. "
+                            f"This creates non-deterministic execution paths that cannot be safely compiled into an executable state machine."
                         ),
                         affected_nodes=[node.id],
-                        rule_violated="Preconditions must be deterministic boolean expressions",
-                        suggestion=f"Replace '{pattern}' with a specific, testable condition.",
+                        rule_violated="Preconditions must be deterministic boolean expressions with formal criteria",
+                        suggestion=f"Replace '{pattern}' with a machine-verifiable condition (e.g., 'amount <= 5000' or 'budget_approved == true').",
                     ))
 
         # Check APPROVAL nodes with no explicit recipients
         if node.type == NodeType.APPROVAL and not node.required_permissions:
             issues.append(_make_issue(
                 check_name=CHECK_AMBIGUITY,
-                severity=IssueSeverity.WARNING,
-                title=f"Approval Without Permission Specification: '{node.name}'",
+                severity=IssueSeverity.CRITICAL,
+                title=f"Approval Without Authorization Specification: '{node.name}'",
                 message=(
                     f"Approval node '{node.name}' has no required_permissions specified. "
                     f"Without explicit permission requirements, the approval process is "
-                    f"ambiguous and could be performed by any user."
+                    f"ambiguous and could be performed by any unauthorized actor."
                 ),
                 affected_nodes=[node.id],
                 rule_violated="APPROVAL nodes must have explicit required_permissions",
-                suggestion=f"Add required_permissions to '{node.name}' specifying who can approve.",
+                suggestion=f"Add required_permissions to '{node.name}' specifying who can approve (e.g. 'finance:approve').",
             ))
 
     # Also report workflow-level ambiguities from metadata
     for amb in workflow.metadata.ambiguities:
+        is_critical_meta = any(crit in amb.lower() for crit in ["appropriate", "bypass", "unauthorized", "deadlock", "cycle", "cannot be reached"])
         issues.append(_make_issue(
             check_name=CHECK_AMBIGUITY,
-            severity=IssueSeverity.WARNING,
+            severity=IssueSeverity.CRITICAL if is_critical_meta else IssueSeverity.WARNING,
             title="Policy-Level Ambiguity Detected",
             message=amb,
-            rule_violated="Natural language policies must be unambiguous",
-            suggestion="Clarify the policy statement to remove ambiguity before generation.",
+            rule_violated="Natural language policies must be unambiguous and formally bounded",
+            suggestion="Clarify the natural language policy statement to remove ambiguity before compiling to IR.",
         ))
 
     return issues

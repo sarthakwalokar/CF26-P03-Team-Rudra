@@ -66,7 +66,7 @@ export default function SafeExecution() {
       const run = await executeWorkflow(currentWorkflow, verificationResult);
       setExecutionRun(run);
       toast[run.status === 'COMPLETED' ? 'success' : 'error'](
-        `Execution ${run.status} in ${formatDuration(run.duration_ms)}`
+        `Execution ${run.status} in ${formatDuration(run.duration_ms)} (${run.events.length} state events)`
       );
     } catch (e: any) {
       toast.error('Execution failure: ' + e.message);
@@ -107,52 +107,88 @@ export default function SafeExecution() {
       </div>
 
       {/* Pre-Flight Gate Status Banner */}
-      <div className="soc-card" style={{ padding: '18px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${isBlocked ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.4)'}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: isBlocked ? '#FB7185' : '#10B981' }} />
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-text-1)' }}>Workflow: {currentWorkflow.name}</span>
-          </div>
+      <div className="soc-card" style={{
+        padding: '20px 24px',
+        marginBottom: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        border: `1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)'}`,
+        background: isBlocked ? 'rgba(239, 68, 68, 0.05)' : 'rgba(16, 185, 129, 0.05)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: isBlocked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {isBlocked ? <XCircle size={24} color="#EF4444" /> : <ShieldCheck size={24} color="#10B981" />}
+            </div>
 
-          <div style={{ height: 16, width: 1, background: 'var(--fg-border)' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isBlocked ? (
-              <XCircle size={15} color="#FB7185" />
-            ) : isVerified ? (
-              <CheckCircle2 size={15} color="#34D399" />
-            ) : (
-              <AlertTriangle size={15} color="#FBBF24" />
-            )}
             <div>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: isBlocked ? '#FB7185' : isVerified ? '#34D399' : '#FBBF24' }}>
-                {isBlocked ? 'EXECUTION BLOCKED' : isVerified ? 'VERIFIED — SAFE TO EXECUTE' : 'UNVERIFIED — BLOCKED'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: isBlocked ? '#EF4444' : '#10B981' }}>
+                  {isBlocked ? 'ZERO-UNTRUSTED EXECUTION GATE: LOCKED (HTTP 403)' : 'ZERO-UNTRUSTED EXECUTION GATE: UNLOCKED'}
+                </span>
+                <span className={`badge-status ${isBlocked ? 'badge-blocked' : 'badge-safe'}`}>
+                  {isBlocked ? 'BLOCKED' : 'VERIFIED'}
+                </span>
               </div>
-              <div style={{ fontSize: 10.5, color: 'var(--fg-text-3)', marginTop: 2 }}>
-                {isBlocked ? 'Workflow must pass required verification checks before runtime execution.' : 'Static analysis & 10 verification checks satisfied.'}
+              <div style={{ fontSize: 12, color: 'var(--fg-text-2)', marginTop: 2 }}>
+                Workflow: <strong style={{ color: 'var(--fg-text-1)' }}>{currentWorkflow.name}</strong> · Verification Score: {verificationResult ? verificationResult.score.toFixed(0) : 0}/100
               </div>
             </div>
           </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            {isBlocked && (
+              <button
+                className="btn-soc-secondary"
+                onClick={() => navigate('/repair')}
+                style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#FB7185' }}
+              >
+                <span>Launch Auto-Repair</span>
+              </button>
+            )}
+            <button
+              className={isBlocked ? 'btn-soc-danger' : 'btn-soc-success'}
+              onClick={handleRunExecution}
+              disabled={isExecuting || isBlocked || !isVerified}
+              style={{ padding: '9px 24px', fontSize: 13 }}
+            >
+              {isExecuting ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  <span>Executing State Machine…</span>
+                </>
+              ) : (
+                <>
+                  <Play size={15} />
+                  <span>{isBlocked ? 'Execution Denied (Blocked)' : 'Execute Workflow'}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <button
-          className={isBlocked ? 'btn-soc-danger' : 'btn-soc-success'}
-          onClick={handleRunExecution}
-          disabled={isExecuting || isBlocked || !isVerified}
-          style={{ padding: '8px 24px', fontSize: 13 }}
-        >
-          {isExecuting ? (
-            <>
-              <Loader2 size={15} className="animate-spin" />
-              <span>Executing State Machine…</span>
-            </>
-          ) : (
-            <>
-              <Play size={15} />
-              <span>{isBlocked ? 'Execution Gate Blocked' : 'Execute Workflow'}</span>
-            </>
-          )}
-        </button>
+        {/* If Blocked, Show Explicit Reason */}
+        {isBlocked && verificationResult && verificationResult.issues.length > 0 && (
+          <div style={{
+            padding: '12px 14px',
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: 6,
+            fontSize: 12,
+            color: '#FB7185',
+          }}>
+            <strong>HTTP 403 Forbidden — Reason:</strong> {verificationResult.issues[0].title}: {verificationResult.issues[0].message}
+          </div>
+        )}
       </div>
 
       {/* Main Execution Monitor Grid */}

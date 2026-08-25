@@ -127,11 +127,42 @@ def test_circular_dependency_detection():
     cycle_issues = [i for i in result.issues if "cycle" in i.title.lower() or "circular" in i.title.lower() or "loop" in i.title.lower()]
     assert len(cycle_issues) > 0
 
-def test_missing_approval_bypass_detection():
-    wf = create_sample_valid_workflow()
-    bypass_edge = WorkflowEdge(id="e_bypass", source="start", target="po_creation", transition_type=TransitionType.SEQUENTIAL)
-    wf.edges.append(bypass_edge)
+def test_all_six_benchmark_presets():
+    from app.services.parser import DEMO_PRESETS, _build_ir_from_preset
 
-    result = verify_workflow(wf)
-    bypass_findings = [i for i in result.issues + result.warnings if "bypass" in i.title.lower() or "approval" in i.title.lower() or "precondition" in i.title.lower()]
-    assert len(bypass_findings) > 0
+    # Case 1: Safe
+    ir1, _, _ = _build_ir_from_preset("procurement", DEMO_PRESETS["procurement"]["policy_text"])
+    res1 = verify_workflow(ir1)
+    assert res1.status in [VerificationStatus.SAFE, VerificationStatus.WARNING]
+    assert res1.score >= 85.0
+
+    # Case 2: Ambiguous
+    ir2, _, _ = _build_ir_from_preset("case_2_ambiguous", DEMO_PRESETS["case_2_ambiguous"]["policy_text"])
+    res2 = verify_workflow(ir2)
+    assert res2.status == VerificationStatus.BLOCKED
+    assert any("appropriate" in i.message.lower() or "ambiguity" in i.title.lower() for i in res2.issues + res2.warnings)
+
+    # Case 3: Approval Bypass
+    ir3, _, _ = _build_ir_from_preset("case_3_approval_bypass", DEMO_PRESETS["case_3_approval_bypass"]["policy_text"])
+    res3 = verify_workflow(ir3)
+    assert res3.status == VerificationStatus.BLOCKED
+    assert any("ordering" in i.title.lower() or "bypass" in i.message.lower() or "precondition" in i.title.lower() for i in res3.issues + res3.warnings)
+
+    # Case 4: Unauthorized Actor
+    ir4, _, _ = _build_ir_from_preset("case_4_unauthorized_actor", DEMO_PRESETS["case_4_unauthorized_actor"]["policy_text"])
+    res4 = verify_workflow(ir4)
+    assert res4.status == VerificationStatus.BLOCKED
+    assert any("unauthorized" in i.title.lower() or "separation of duties" in i.message.lower() for i in res4.issues)
+
+    # Case 5: Circular Workflow
+    ir5, _, _ = _build_ir_from_preset("case_5_circular", DEMO_PRESETS["case_5_circular"]["policy_text"])
+    res5 = verify_workflow(ir5)
+    assert res5.status == VerificationStatus.BLOCKED
+    assert any("circular" in i.title.lower() or "cycle" in i.title.lower() for i in res5.issues)
+
+    # Case 6: Unreachable State
+    ir6, _, _ = _build_ir_from_preset("case_6_unreachable", DEMO_PRESETS["case_6_unreachable"]["policy_text"])
+    res6 = verify_workflow(ir6)
+    assert res6.status == VerificationStatus.BLOCKED
+    assert any("unreachable" in i.title.lower() for i in res6.issues)
+

@@ -4,13 +4,13 @@ import { toast } from 'sonner';
 import { Wand2, AlertTriangle, ChevronRight, Loader2, Sparkles, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlowGuardStore } from '../lib/store';
-import { generateWorkflow } from '../services/api';
+import { generateWorkflow, verifyWorkflow } from '../services/api';
 import { DEMO_POLICIES } from '../lib/utils';
 
 export default function CreateWorkflow() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setCurrentWorkflow, isGenerating, setIsGenerating, apiKey, useMock } = useFlowGuardStore();
+  const { setCurrentWorkflow, setVerificationResult, isGenerating, setIsGenerating, apiKey, useMock } = useFlowGuardStore();
   const [policy, setPolicy] = useState((location.state as any)?.policy || '');
   const [workflowName, setWorkflowName] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -32,6 +32,10 @@ export default function CreateWorkflow() {
       });
       setResult(resp);
       setCurrentWorkflow(resp.workflow);
+      try {
+        const vResult = await verifyWorkflow(resp.workflow);
+        setVerificationResult(vResult);
+      } catch {}
       toast.success(`Workflow parsed by ${resp.parsed_by} — ${resp.workflow.nodes.length} nodes`);
     } catch (e: any) {
       setError(e.message || 'Generation failed');
