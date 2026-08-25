@@ -21,7 +21,7 @@ from app.schemas.workflow import (
     SimulateRequest, SimulationResult,
     StressTestRequest, StressTestResult,
     ExecuteWorkflowRequest, ExecutionRun,
-    AuditEventType, WorkflowStatus,
+    AuditEventType, WorkflowStatus, VerificationStatus,
 )
 from app.services.parser import parse_policy
 from app.verification.engine import verify_workflow
