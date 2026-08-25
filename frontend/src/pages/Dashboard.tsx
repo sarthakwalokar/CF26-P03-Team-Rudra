@@ -10,6 +10,7 @@ import { useFlowGuardStore } from '../lib/store';
 import { generateWorkflow, verifyWorkflow } from '../services/api';
 import { DEMO_POLICIES, getScoreColor } from '../lib/utils';
 import { toast } from 'sonner';
+import LifecycleIndicator from '../components/LifecycleIndicator';
 
 const PIPELINE_STAGES = [
   { id: 'policy', label: '1. NATURAL POLICY', desc: 'English Business Input' },
@@ -138,6 +139,9 @@ export default function Dashboard() {
           </span>
         </div>
       </div>
+
+      {/* 7-Stage Visual Lifecycle Indicator */}
+      <LifecycleIndicator />
 
       {/* Pipeline Progression Bar */}
       <div className="soc-card" style={{ padding: '14px 18px', marginBottom: 24 }}>
